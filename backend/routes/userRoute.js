@@ -1,7 +1,10 @@
 import express from "express"
-import {register,login,logout,verifyEmail,forgotPassword,resetPassword} from "../controllers/user-controller.js"
+import {register,login,logout,verifyEmail,forgotPassword,resetPassword,checkAuth} from "../controllers/user-controller.js"
+import { isUser } from "../middlewares/auth-middleware.js";
 const router=express.Router();
 
+
+router.get("/check-auth", isUser, checkAuth);
 
 router.post("/register",register);
 router.post("/login",login);
