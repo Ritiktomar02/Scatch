@@ -8,15 +8,17 @@ import { useContext, useEffect } from "react";
 import UserContext from "./context/UserContext";
 import LoadingSpinner from "./components/LoadingSpinner";
 import { Navigate } from "react-router-dom";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage"
+import ResetPasswordPage from "./pages/ResetPasswordPage"
 
 const ProtectedRoute = ({ children }) => {
   const { authenticated, user } = useContext(UserContext);
-  console.log(authenticated);
+
   if (!authenticated) {
     return <Navigate to="/login" replace />;
   }
 
-  if (!user.isVerified) {
+  if (!user?.isVerified) {
     return <Navigate to="/verify-email" replace />;
   }
 
@@ -25,22 +27,21 @@ const ProtectedRoute = ({ children }) => {
 const RedirectAuthenticatedUser = ({ children }) => {
   const { authenticated, user } = useContext(UserContext);
 
-  if (authenticated && user.isVerified) {
+  if (authenticated && user?.isVerified) {
     return <Navigate to="/" replace />;
   }
 
   return children;
 };
 const App = () => {
-  const { checkingAuth, checkAuth, authenticated } = useContext(UserContext);
+  const { checkingAuth, checkAuth } = useContext(UserContext);
 
   useEffect(() => {
-    if (!authenticated) {
-      checkAuth();
-    }
+    checkAuth();
   }, []);
 
-  if (checkingAuth && authenticated) return <LoadingSpinner />;
+  if (checkingAuth) return <LoadingSpinner />;
+
 
   return (
     <div
@@ -95,6 +96,22 @@ const App = () => {
             </RedirectAuthenticatedUser>
           }
         />
+        <Route
+					path='/forgot-password'
+					element={
+						<RedirectAuthenticatedUser>
+							<ForgotPasswordPage />
+						</RedirectAuthenticatedUser>
+					}
+				/>
+        <Route
+					path='/reset-password/:token'
+					element={
+						<RedirectAuthenticatedUser>
+							<ResetPasswordPage />
+						</RedirectAuthenticatedUser>
+					}
+				/>
         <Route path="/verify-email" element={<EmailVerificationPage />} />
       </Routes>
     </div>

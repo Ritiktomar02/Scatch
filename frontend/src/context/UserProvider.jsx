@@ -4,6 +4,8 @@ import { AUTH } from "../services/api";
 import axios from "axios";
 import toast from "react-hot-toast";
 
+axios.defaults.withCredentials=true
+
 const UserProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -52,6 +54,19 @@ const UserProvider = ({ children }) => {
     }
   };
 
+  const logout = async () => {
+    setLoading(true);
+    try {
+      await axios.post(AUTH.LOGOUT);
+      setUser(null);
+      setAuthenticated(false);
+      setLoading(false);
+    } catch (err) {
+      setError("Logout failed");
+      setLoading(false);
+    }
+  };
+
   const verifyEmail = async (code) => {
     setLoading(true);
     try {
@@ -66,21 +81,51 @@ const UserProvider = ({ children }) => {
     }
   };
 
-  const checkAuth = async () => {
+ const checkAuth = async () => {
     setCheckingAuth(true);
     try {
-      const response = await axios.get(AUTH.CHECK_AUTH);
+      const response = await axios.get(AUTH.CHECK_AUTH); 
       setUser(response.data.user);
       setAuthenticated(true);
-    } catch (err) {
-      if (err.response?.status !== 401) {
-        console.error(err);
-      }
+      setCheckingAuth(false);
+    } catch {
       setAuthenticated(false);
-    } finally {
       setCheckingAuth(false);
     }
   };
+
+  const forgotPassword = async (email) => {
+    setLoading(true);
+    try {
+      const response = await axios.post(AUTH.FORGOT_PASSWORD, { email });
+      setMessage(response.data.message);
+      setLoading(false);
+    } catch (err) {
+      setError(
+        err.response?.data?.message || "Error sending reset email"
+      );
+      setLoading(false);
+      throw err;
+    }
+  };
+
+  const resetPassword = async (token, password) => {
+    setLoading(true);
+    try {
+      const response = await axios.post(
+        `${AUTH.RESET_PASSWORD}/${token}`,
+        { password }
+      );
+
+      setMessage(response.data.message);
+      setLoading(false);
+    } catch (err) {
+      setError(err.response?.data?.message || "Reset failed");
+      setLoading(false);
+      throw err;
+    }
+  };
+
 
   return (
     <UserContext.Provider
@@ -101,6 +146,9 @@ const UserProvider = ({ children }) => {
         verifyEmail,
         checkAuth,
         login,
+        logout,
+        forgotPassword,
+        resetPassword
       }}
     >
       {children}

@@ -202,15 +202,11 @@ export const forgotPassword = async (req, res) => {
 
 export const resetPassword = async (req, res) => {
   try {
-    console.log(req.headers);
 
     const { token } = req.params;
     const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
 
     const password = req.body?.password;
-
-    console.log("Token:", token);
-    console.log("Body:", req.body);
 
     if (!password) {
       return res.status(400).json({ message: "Password is required" });
