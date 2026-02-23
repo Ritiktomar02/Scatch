@@ -113,6 +113,7 @@ const App = () => {
 					}
 				/>
         <Route path="/verify-email" element={<EmailVerificationPage />} />
+        <Route path='*' element={<Navigate to='/' replace />} />
       </Routes>
     </div>
   );

@@ -94,6 +94,15 @@ const SignUpPage = () => {
           </Link>
         </p>
       </div>
+
+      <button className="w-full max-w-md mx-auto flex items-center justify-center gap-3 py-3 rounded-full border border-gray-400 bg-gray-100 text-gray-800 hover:bg-white transition">
+        <img
+          src="https://www.svgrepo.com/show/475656/google-color.svg"
+          alt="google"
+          className="w-6 h-6"
+        />
+        <span className="text-lg font-medium">Sign up with Google</span>
+      </button>
     </motion.div>
   );
 };
