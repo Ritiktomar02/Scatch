@@ -11,6 +11,9 @@ import {
   sendResetSuccessEmail,
 } from "../mailtrap/emails.js";
 
+import { oauth2Client } from "../config/google-connection.js";
+import axios from "axios";
+
 export const register = async (req, res) => {
   try {
     const { username, email, password } = req.body;
@@ -261,5 +264,57 @@ export const checkAuth = async (req, res) => {
       console.log("Error in checkAuth ", error);
     }
     res.status(400).json({ success: false, message: error.message });
+  }
+};
+
+
+export const googleLogin = async (req, res) => {
+  try {
+    const { code } = req.body;
+
+    if (!code) {
+      return res.status(400).json({ message: "Google code required" });
+    }
+
+    const { tokens } = await oauth2Client.getToken(code);
+    oauth2Client.setCredentials(tokens);
+
+    // Get user profile
+
+    console.log("Token: ",tokens)
+    const response = await axios.get(
+      "https://www.googleapis.com/oauth2/v2/userinfo",
+      {
+        headers: {
+          Authorization: `Bearer ${tokens.access_token}`,
+        },
+      }
+    );
+    
+    const { email, name, picture } = response.data;
+
+    let user = await User.findOne({ email });
+
+    if (!user) {
+      user = await User.create({
+        username: name,
+        email,
+        password: "google-auth",
+        isVerified: true,
+      });
+    }
+
+    generateTokenAndSetCookies(res, user._id);
+
+    const safeUser = await User.findById(user._id).select("-password");
+
+    res.status(200).json({
+      success: true,
+      message: "Google login successful",
+      user: safeUser,
+    });
+  } catch (error) {
+    console.log("Google login error", error);
+    res.status(500).json({ message: "Google auth failed" });
   }
 };

@@ -1,3 +1,4 @@
+
 import globals from "globals";
 import react from "eslint-plugin-react";
 import reactHooks from "eslint-plugin-react-hooks";
@@ -5,7 +6,7 @@ import reactRefresh from "eslint-plugin-react-refresh";
 import { defineConfig, globalIgnores } from "eslint/config";
 
 export default defineConfig([
-  globalIgnores(["dist"]),
+  globalIgnores(["dist", "node_modules"]),
 
   {
     files: ["**/*.{js,jsx}"],
@@ -32,6 +33,8 @@ export default defineConfig([
     },
 
     rules: {
+      ...react.configs.recommended.rules, // ⭐️ THIS FIXES YOUR ISSUE
+
       "no-unused-vars": [
         "error",
         {
@@ -40,9 +43,9 @@ export default defineConfig([
           ignoreRestSiblings: true,
         },
       ],
-
-      "react/react-in-jsx-scope": "off", 
-      "react/prop-types": "off", 
+       "react/no-unescaped-entities": "off",
+      "react/react-in-jsx-scope": "off",
+      "react/prop-types": "off",
 
       "react-hooks/rules-of-hooks": "error",
       "react-hooks/exhaustive-deps": "warn",

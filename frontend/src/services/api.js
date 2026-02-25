@@ -10,6 +10,6 @@ export const AUTH={
     FORGOT_PASSWORD:BASE_URL+'/user/forgot-password',
     RESET_PASSWORD:BASE_URL+'/user/reset-password',
     LOGOUT:BASE_URL+'/user/logout',
-    CHECK_AUTH:BASE_URL+'/user/check-auth'
-
+    CHECK_AUTH:BASE_URL+'/user/check-auth',
+    GOOGLE_LOGIN:BASE_URL+ "/user/google-login",
 }

@@ -6,6 +6,7 @@ import { Link, useNavigate } from "react-router-dom";
 import PasswordStrengthMeter from "../components/PasswordStrengthMeter";
 import UserContext from "../context/UserContext";
 import toast from "react-hot-toast";
+import { useGoogleLogin } from "@react-oauth/google";
 
 const SignUpPage = () => {
   const [username, setUserName] = useState("");
@@ -13,7 +14,7 @@ const SignUpPage = () => {
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
 
-  const { signUp, error, loading } = useContext(UserContext);
+  const { signUp, error, loading, googleLogin } = useContext(UserContext);
 
   const handleSignUp = async (e) => {
     e.preventDefault();
@@ -29,6 +30,19 @@ const SignUpPage = () => {
       toast.error(error.message || "Error During SignUp");
     }
   };
+
+  const googleAuth = useGoogleLogin({
+    flow: "auth-code",
+
+    onSuccess: async (codeResponse) => {
+      await googleLogin(codeResponse.code);
+      toast.success("Google signup successful");
+    },
+
+    onError: () => {
+      console.log("Google signup failed");
+    },
+  });
 
   return (
     <motion.div
@@ -95,7 +109,10 @@ const SignUpPage = () => {
         </p>
       </div>
 
-      <button className="w-full max-w-md mx-auto flex items-center justify-center gap-3 py-3 rounded-full border border-gray-400 bg-gray-100 text-gray-800 hover:bg-white transition">
+      <button
+        className="w-full max-w-md mx-auto flex items-center justify-center gap-3 py-3 rounded-full border border-gray-400 bg-gray-100 text-gray-800 hover:bg-white transition"
+        onClick={() => googleAuth()}
+      >
         <img
           src="https://www.svgrepo.com/show/475656/google-color.svg"
           alt="google"

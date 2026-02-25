@@ -3,8 +3,9 @@ import UserContext from "./UserContext";
 import { AUTH } from "../services/api";
 import axios from "axios";
 import toast from "react-hot-toast";
+import { googleLogout } from "@react-oauth/google";
 
-axios.defaults.withCredentials=true
+axios.defaults.withCredentials = true;
 
 const UserProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -58,11 +59,12 @@ const UserProvider = ({ children }) => {
     setLoading(true);
     try {
       await axios.post(AUTH.LOGOUT);
+      googleLogout();
       setUser(null);
       setAuthenticated(false);
       setLoading(false);
     } catch (err) {
-      setError("Logout failed");
+      setError(err.response?.data?.message || "Logout failed");
       setLoading(false);
     }
   };
@@ -81,10 +83,10 @@ const UserProvider = ({ children }) => {
     }
   };
 
- const checkAuth = async () => {
+  const checkAuth = async () => {
     setCheckingAuth(true);
     try {
-      const response = await axios.get(AUTH.CHECK_AUTH); 
+      const response = await axios.get(AUTH.CHECK_AUTH);
       setUser(response.data.user);
       setAuthenticated(true);
       setCheckingAuth(false);
@@ -101,9 +103,7 @@ const UserProvider = ({ children }) => {
       setMessage(response.data.message);
       setLoading(false);
     } catch (err) {
-      setError(
-        err.response?.data?.message || "Error sending reset email"
-      );
+      setError(err.response?.data?.message || "Error sending reset email");
       setLoading(false);
       throw err;
     }
@@ -112,10 +112,9 @@ const UserProvider = ({ children }) => {
   const resetPassword = async (token, password) => {
     setLoading(true);
     try {
-      const response = await axios.post(
-        `${AUTH.RESET_PASSWORD}/${token}`,
-        { password }
-      );
+      const response = await axios.post(`${AUTH.RESET_PASSWORD}/${token}`, {
+        password,
+      });
 
       setMessage(response.data.message);
       setLoading(false);
@@ -126,7 +125,16 @@ const UserProvider = ({ children }) => {
     }
   };
 
-
+  const googleLogin = async (code) => {
+    try {
+      const response = await axios.post(AUTH.GOOGLE_LOGIN, { code });
+      console.log(response)
+      setUser(response.data.user);
+      setAuthenticated(true);
+    } catch (err) {
+      setError("Google login failed");
+    }
+  };
   return (
     <UserContext.Provider
       value={{
@@ -148,7 +156,8 @@ const UserProvider = ({ children }) => {
         login,
         logout,
         forgotPassword,
-        resetPassword
+        resetPassword,
+        googleLogin
       }}
     >
       {children}

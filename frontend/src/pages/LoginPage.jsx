@@ -1,20 +1,34 @@
 import { useContext, useState } from "react";
 import { motion } from "framer-motion";
-import { Mail, Lock, Loader, Chrome } from "lucide-react";
+import { Mail, Lock, Loader, } from "lucide-react";
 import { Link } from "react-router-dom";
 import Input from "../components/Input";
 import UserContext from "../context/UserContext";
+import { useGoogleLogin } from "@react-oauth/google";
 
 const LoginPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const { login, loading, error } = useContext(UserContext);
+  const { login, loading, error, googleLogin } = useContext(UserContext);
 
   const handleLogin = async (e) => {
     e.preventDefault();
     await login(email, password);
   };
+
+  const googleAuth = useGoogleLogin({
+  flow: "auth-code",
+
+  onSuccess: async (codeResponse) => {
+    await googleLogin(codeResponse.code);
+     toast.success("Google signin successful");
+  },
+
+  onError: () => {
+    console.log("Google login failed");
+  },
+});
 
   return (
     <motion.div
@@ -79,7 +93,8 @@ const LoginPage = () => {
         </p>
       </div>
 
-      <button className="w-full max-w-md mx-auto flex items-center justify-center gap-3 py-3 rounded-full border border-gray-400 bg-gray-100 text-gray-800 hover:bg-white transition">
+      <button className="w-full max-w-md mx-auto flex items-center justify-center gap-3 py-3 rounded-full border border-gray-400 bg-gray-100 text-gray-800 hover:bg-white transition"
+      onClick={() => googleAuth()}>
         <img
           src="https://www.svgrepo.com/show/475656/google-color.svg"
           alt="google"
