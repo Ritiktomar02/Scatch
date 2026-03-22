@@ -1,6 +1,7 @@
 import { useContext, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { AlertCircle } from "lucide-react";
 import UserContext from "../context/UserContext";
 
 const EmailVerificationPage = () => {
@@ -54,18 +55,20 @@ const EmailVerificationPage = () => {
 	// Auto submit when all fields are filled
 	useEffect(() => {
 		if (code.every((digit) => digit !== "")) {
-			handleSubmit(new Event("submit"));
+			const verificationCode = code.join("");
+			verifyEmail(verificationCode).then((success) => {
+				if (success) navigate("/");
+			});
 		}
 	}, [code]);
 
 	return (
-		<div className='max-w-md w-full bg-gray-800 bg-opacity-50 backdrop-filter backdrop-blur-xl rounded-2xl shadow-xl overflow-hidden'>
-			<motion.div
-				initial={{ opacity: 0, y: -50 }}
-				animate={{ opacity: 1, y: 0 }}
-				transition={{ duration: 0.5 }}
-				className='bg-gray-800 bg-opacity-50 backdrop-filter backdrop-blur-xl rounded-2xl shadow-2xl p-8 w-full max-w-md'
-			>
+		<motion.div
+			initial={{ opacity: 0, y: -50 }}
+			animate={{ opacity: 1, y: 0 }}
+			transition={{ duration: 0.5 }}
+			className='max-w-md w-full bg-gray-800/50 backdrop-filter backdrop-blur-xl rounded-2xl shadow-xl overflow-hidden p-8'
+		>
 				<h2 className='text-3xl font-bold mb-6 text-center bg-linear-to-r from-green-400 to-emerald-500 text-transparent bg-clip-text'>
 					Verify Your Email
 				</h2>
@@ -86,19 +89,23 @@ const EmailVerificationPage = () => {
 							/>
 						))}
 					</div>
-					{error && <p className='text-red-500 font-semibold mt-2'>{error}</p>}
+					{error && (
+						<div className='flex items-center gap-2 px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/20'>
+							<AlertCircle className='size-4 text-red-400 shrink-0' />
+							<p className='text-red-400 text-xs'>{error}</p>
+						</div>
+					)}
 					<motion.button
 						whileHover={{ scale: 1.05 }}
 						whileTap={{ scale: 0.95 }}
 						type='submit'
 						disabled={loading || code.some((digit) => !digit)}
-						className='w-full bg-linear-to-r from-green-500 to-emerald-600 text-white font-bold py-3 px-4 rounded-lg shadow-lg hover:from-green-600 hover:to-emerald-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50 disabled:opacity-50'
+						className='w-full bg-linear-to-r from-green-500 to-emerald-600 text-white font-bold py-3 px-4 rounded-lg shadow-lg hover:from-green-600 hover:to-emerald-700 focus:outline-none focus:ring-2 focus:ring-green-500/50 disabled:opacity-50'
 					>
 						{loading ? "Verifying..." : "Verify Email"}
 					</motion.button>
 				</form>
-			</motion.div>
-		</div>
+		</motion.div>
 	);
 };
 export default EmailVerificationPage;

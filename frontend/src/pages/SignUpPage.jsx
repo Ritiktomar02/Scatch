@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import Input from "../components/Input";
-import { Loader, Lock, Mail, User } from "lucide-react";
+import { Loader, Lock, Mail, User, AlertCircle } from "lucide-react";
 import { useContext, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import PasswordStrengthMeter from "../components/PasswordStrengthMeter";
@@ -46,7 +46,7 @@ const SignUpPage = () => {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="max-w-md w-full bg-gray-800 bg-opacity-50 backdrop-filter backdrop-blur-xl rounded-2xl shadow-xl 
+      className="max-w-md w-full bg-gray-800/50 backdrop-filter backdrop-blur-xl rounded-2xl shadow-xl 
 			overflow-hidden"
     >
       <div className="p-8">
@@ -76,7 +76,12 @@ const SignUpPage = () => {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
-          {error && <p className="text-red-500 font-semibold mt-2">{error}</p>}
+          {error && (
+            <div className="flex items-center gap-2 px-3 py-2 mt-2 rounded-lg bg-red-500/10 border border-red-500/20">
+              <AlertCircle className="size-4 text-red-400 shrink-0" />
+              <p className="text-red-400 text-xs">{error}</p>
+            </div>
+          )}
           <PasswordStrengthMeter password={password} />
 
           <motion.button
@@ -96,8 +101,27 @@ const SignUpPage = () => {
             )}
           </motion.button>
         </form>
+
+        <div className="flex items-center my-6">
+          <div className="flex-1 border-t border-gray-600"></div>
+          <span className="px-4 text-sm text-gray-400">or</span>
+          <div className="flex-1 border-t border-gray-600"></div>
+        </div>
+
+        <button
+          className="w-full flex items-center justify-center gap-3 py-3 rounded-lg border border-gray-600 bg-gray-700/50 text-white hover:bg-gray-600 transition duration-200"
+          onClick={() => googleAuth()}
+        >
+          <img
+            src="https://www.svgrepo.com/show/475656/google-color.svg"
+            alt="google"
+            className="w-5 h-5"
+          />
+          <span className="text-sm font-medium">Sign up with Google</span>
+        </button>
       </div>
-      <div className="px-8 py-4 bg-gray-900 bg-opacity-50 flex justify-center">
+
+      <div className="px-8 py-4 bg-gray-900/50 flex justify-center">
         <p className="text-sm text-gray-400">
           Already have an account?{" "}
           <Link to={"/login"} className="text-green-400 hover:underline">
@@ -105,18 +129,6 @@ const SignUpPage = () => {
           </Link>
         </p>
       </div>
-
-      <button
-        className="w-full max-w-md mx-auto flex items-center justify-center gap-3 py-3 rounded-full border border-gray-400 bg-gray-100 text-gray-800 hover:bg-white transition"
-        onClick={() => googleAuth()}
-      >
-        <img
-          src="https://www.svgrepo.com/show/475656/google-color.svg"
-          alt="google"
-          className="w-6 h-6"
-        />
-        <span className="text-lg font-medium">Sign up with Google</span>
-      </button>
     </motion.div>
   );
 };

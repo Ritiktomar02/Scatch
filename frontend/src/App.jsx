@@ -24,6 +24,20 @@ const ProtectedRoute = ({ children }) => {
 
   return children;
 };
+const VerifyEmailRoute = ({ children }) => {
+  const { authenticated, user } = useContext(UserContext);
+
+  if (!authenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (user?.isVerified) {
+    return <Navigate to="/" replace />;
+  }
+
+  return children;
+};
+
 const RedirectAuthenticatedUser = ({ children }) => {
   const { authenticated, user } = useContext(UserContext);
 
@@ -112,7 +126,14 @@ const App = () => {
 						</RedirectAuthenticatedUser>
 					}
 				/>
-        <Route path="/verify-email" element={<EmailVerificationPage />} />
+        <Route
+          path="/verify-email"
+          element={
+            <VerifyEmailRoute>
+              <EmailVerificationPage />
+            </VerifyEmailRoute>
+          }
+        />
         <Route path='*' element={<Navigate to='/' replace />} />
       </Routes>
     </div>

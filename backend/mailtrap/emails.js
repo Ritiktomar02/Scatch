@@ -12,7 +12,7 @@ export const sendVerificationEmail = async (email, verificationToken) => {
       from: `"Scatch" <${process.env.GMAIL_USER}>`,
       to: email,
       subject: "Your verification code for Scatch",
-      text: `Your verification code is ${verificationToken}. It expires in 15 minutes.`,
+      text: `Your verification code is ${verificationToken}. It expires in 24 hours.`,
       html: VERIFICATION_EMAIL_TEMPLATE.replace(
         "{verificationCode}",
         verificationToken
