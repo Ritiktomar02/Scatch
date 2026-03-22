@@ -12,4 +12,5 @@ export const AUTH={
     LOGOUT:BASE_URL+'/user/logout',
     CHECK_AUTH:BASE_URL+'/user/check-auth',
     GOOGLE_LOGIN:BASE_URL+ "/user/google-login",
+    REFRESH:BASE_URL+'/user/refresh',
 }

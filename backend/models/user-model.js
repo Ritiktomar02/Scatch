@@ -15,13 +15,15 @@ const userSchema = new mongoose.Schema(
 
     password: {
       type: String,
-      required: true,
+      required: function () {
+        return this.authProvider === "local";
+      },
     },
 
-    role: {
+    authProvider: {
       type: String,
-      enum: ["user", "admin"],
-      default: "user",
+      enum: ["local", "google"],
+      default: "local",
     },
 
     lastLogin: {
@@ -37,20 +39,7 @@ const userSchema = new mongoose.Schema(
     resetPasswordExpiresAt: Date,
     verificationToken: String,
     verificationTokenExpiresAt: Date,
-
-    cart: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Product",
-      },
-    ],
-
-    orders: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Product",
-      },
-    ],
+    refreshToken: String,
   },
   { timestamps: true },
 );

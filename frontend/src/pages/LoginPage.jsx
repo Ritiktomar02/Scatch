@@ -5,6 +5,7 @@ import { Link } from "react-router-dom";
 import Input from "../components/Input";
 import UserContext from "../context/UserContext";
 import { useGoogleLogin } from "@react-oauth/google";
+import toast from "react-hot-toast";
 
 const LoginPage = () => {
   const [email, setEmail] = useState("");
@@ -14,7 +15,7 @@ const LoginPage = () => {
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    await login(email, password);
+    login(email, password);
   };
 
   const googleAuth = useGoogleLogin({
@@ -22,11 +23,10 @@ const LoginPage = () => {
 
   onSuccess: async (codeResponse) => {
     await googleLogin(codeResponse.code);
-     toast.success("Google signin successful");
   },
 
   onError: () => {
-    console.log("Google login failed");
+    toast.error("Google login failed");
   },
 });
 

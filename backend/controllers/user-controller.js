@@ -1,5 +1,6 @@
 import bcrypt from "bcrypt";
 import crypto from "crypto";
+import jwt from "jsonwebtoken";
 
 import User from "../models/user-model.js";
 import { generateVerificationCode } from "../utils/generateVerificationCode.js";
@@ -21,7 +22,7 @@ export const register = async (req, res) => {
     if (!username || !email || !password) {
       return res.status(400).json({ message: "Some fields are missing" });
     }
-
+    
     const userAlreadyExists = await User.findOne({ email });
     if (userAlreadyExists) {
       return res.status(400).json({ message: "User already exists" });
@@ -38,7 +39,7 @@ export const register = async (req, res) => {
       verificationTokenExpiresAt: Date.now() + 24 * 60 * 60 * 1000,
     });
 
-    generateTokenAndSetCookies(res, user._id);
+    await generateTokenAndSetCookies(res, user._id);
 
     await sendVerificationEmail(user.email, verificationToken);
 
@@ -68,13 +69,19 @@ export const login = async (req, res) => {
     const existingUser = await User.findOne({ email });
 
     if (!existingUser) {
-      return res.status(400).json({ message: "User doesn't exist" });
+      return res.status(400).json({ message: "Invalid email or password" });
+    }
+
+    if (existingUser.authProvider === "google") {
+      return res.status(400).json({
+        message: "This account uses Google sign-in",
+      });
     }
 
     const passwordCheck = await bcrypt.compare(password, existingUser.password);
 
     if (!passwordCheck) {
-      return res.status(400).json({ message: "Wrong Password" });
+      return res.status(400).json({ message: "Invalid email or password" });
     }
 
     if (!existingUser.isVerified) {
@@ -83,7 +90,7 @@ export const login = async (req, res) => {
       });
     }
 
-    generateTokenAndSetCookies(res, existingUser._id);
+    await generateTokenAndSetCookies(res, existingUser._id);
 
     existingUser.lastLogin = new Date();
     await existingUser.save();
@@ -105,15 +112,32 @@ export const login = async (req, res) => {
 
 export const logout = async (req, res) => {
   try {
-    res.clearCookie("token", {
+    // Decode access token to get userId and clear refresh token from DB
+    const accessToken = req.cookies.accessToken;
+    if (accessToken) {
+      // decode (not verify) — works even if the token is expired
+      const decoded = jwt.decode(accessToken);
+      if (decoded?.userId) {
+        await User.findByIdAndUpdate(decoded.userId, { refreshToken: undefined });
+      }
+    }
+
+    const cookieOptions = {
       httpOnly: true,
-      secure: true,
-      sameSite: "none",
-    });
-    res.status(200).json({
-      message: "User Logout Successfully",
-    });
-  } catch (error) {}
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+    };
+
+    res.clearCookie("accessToken", cookieOptions);
+    res.clearCookie("refreshToken", { ...cookieOptions, path: "/user/refresh" });
+
+    res.status(200).json({ message: "User Logout Successfully" });
+  } catch (error) {
+    if (process.env.NODE_ENV === "development") {
+      console.error("Logout error:", error);
+    }
+    res.status(500).json({ message: "Internal Server Error" });
+  }
 };
 
 export const verifyEmail = async (req, res) => {
@@ -169,8 +193,13 @@ export const forgotPassword = async (req, res) => {
 
     const user = await User.findOne({ email });
 
-    if (!user) {
-      return res.status(400).json({ message: "User not found" });
+    // Always return the same message whether user exists or not
+    // to prevent email enumeration
+    if (!user || user.authProvider === "google") {
+      return res.status(200).json({
+        success: true,
+        message: "If an account exists with this email, a reset link has been sent",
+      });
     }
 
     const resetToken = crypto.randomBytes(20).toString("hex");
@@ -192,7 +221,7 @@ export const forgotPassword = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: "Password reset email sent",
+      message: "If an account exists with this email, a reset link has been sent",
     });
   } catch (error) {
     if (process.env.NODE_ENV === "development") {
@@ -205,14 +234,17 @@ export const forgotPassword = async (req, res) => {
 
 export const resetPassword = async (req, res) => {
   try {
-
     const { token } = req.params;
     const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
 
-    const password = req.body?.password;
+    const { password } = req.body;
 
     if (!password) {
       return res.status(400).json({ message: "Password is required" });
+    }
+
+    if (password.length < 8) {
+      return res.status(400).json({ message: "Password must be at least 8 characters" });
     }
 
     const user = await User.findOne({
@@ -224,6 +256,12 @@ export const resetPassword = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: "Invalid or expired reset token",
+      });
+    }
+
+    if (user.authProvider === "google") {
+      return res.status(400).json({
+        message: "Password reset not allowed for Google accounts",
       });
     }
 
@@ -261,12 +299,11 @@ export const checkAuth = async (req, res) => {
     res.status(200).json({ success: true, user });
   } catch (error) {
     if (process.env.NODE_ENV === "development") {
-      console.log("Error in checkAuth ", error);
+      console.error("Error in checkAuth:", error);
     }
-    res.status(400).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 };
-
 
 export const googleLogin = async (req, res) => {
   try {
@@ -279,32 +316,39 @@ export const googleLogin = async (req, res) => {
     const { tokens } = await oauth2Client.getToken(code);
     oauth2Client.setCredentials(tokens);
 
-    // Get user profile
-
-    console.log("Token: ",tokens)
     const response = await axios.get(
       "https://www.googleapis.com/oauth2/v2/userinfo",
       {
         headers: {
           Authorization: `Bearer ${tokens.access_token}`,
         },
-      }
+      },
     );
-    
-    const { email, name, picture } = response.data;
+
+    const { email, name } = response.data;
 
     let user = await User.findOne({ email });
+
+    if (user && user.authProvider === "local") {
+      return res.status(400).json({
+        message:
+          "Account already exists. Please login with email and password.",
+      });
+    }
 
     if (!user) {
       user = await User.create({
         username: name,
         email,
-        password: "google-auth",
+        authProvider: "google",
         isVerified: true,
       });
     }
 
-    generateTokenAndSetCookies(res, user._id);
+    await generateTokenAndSetCookies(res, user._id);
+
+    user.lastLogin = new Date();
+    await user.save();
 
     const safeUser = await User.findById(user._id).select("-password");
 
@@ -314,7 +358,56 @@ export const googleLogin = async (req, res) => {
       user: safeUser,
     });
   } catch (error) {
-    console.log("Google login error", error);
+    if (process.env.NODE_ENV === "development") {
+      console.error("Google login error:", error);
+    }
     res.status(500).json({ message: "Google auth failed" });
+  }
+};
+
+// Refresh token endpoint — this is called automatically by the frontend
+// when an access token expires (401 response).
+//
+// Flow:
+// 1. Read refresh token from cookie
+// 2. Verify it's a valid JWT
+// 3. Hash it and compare with what's stored in DB
+// 4. If match → issue NEW access + refresh tokens (this is "rotation")
+// 5. If no match → someone reused a stolen token, revoke everything
+export const refresh = async (req, res) => {
+  try {
+    const refreshToken = req.cookies.refreshToken;
+
+    if (!refreshToken) {
+      return res.status(401).json({ message: "No refresh token" });
+    }
+
+    // Verify the JWT is valid and not expired
+    const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+
+    // Hash the token and compare with DB
+    const hashedToken = crypto
+      .createHash("sha256")
+      .update(refreshToken)
+      .digest("hex");
+
+    const user = await User.findById(decoded.userId);
+
+    if (!user || user.refreshToken !== hashedToken) {
+      // Token reuse detected or user not found — revoke everything
+      if (user) {
+        user.refreshToken = undefined;
+        await user.save();
+      }
+      return res.status(401).json({ message: "Invalid refresh token" });
+    }
+
+    // Token is valid — rotate: issue new access + refresh tokens
+    await generateTokenAndSetCookies(res, user._id);
+
+    res.status(200).json({ success: true, message: "Tokens refreshed" });
+  } catch (error) {
+    // JWT expired or malformed
+    return res.status(401).json({ message: "Invalid refresh token" });
   }
 };

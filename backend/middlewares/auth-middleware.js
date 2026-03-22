@@ -1,43 +1,36 @@
-import jwt from "jsonwebtoken"
+import jwt from "jsonwebtoken";
+import User from "../models/user-model.js";
 
 export const isUser = async (req, res, next) => {
   try {
-    const token = req.cookies.token;
+    const token = req.cookies.accessToken;
     if (!token)
       return res
         .status(401)
         .json({ success: false, message: "Unauthorized - no token provided" });
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    if (!decoded)
-      return res
-        .status(401)
-        .json({ success: false, message: "Unauthorized - invalid token" });
-
+    const decoded = jwt.verify(token, process.env.JWT_ACCESS_SECRET);
     req.userId = decoded.userId;
     next();
   } catch (error) {
-    if (process.env.NODE_ENV === "development") {
-      console.log("Error in verifyToken ", error);
+    if (error.name === "TokenExpiredError" || error.name === "JsonWebTokenError") {
+      return res.status(401).json({ success: false, message: "Unauthorized - invalid token" });
     }
     return res.status(500).json({ success: false, message: "Server error" });
   }
 };
 
-export const isAdmin = (req, res, next) => {
+export const isAdmin = async (req, res, next) => {
   try {
-    if (req.role !== "admin") {
+    const user = await User.findById(req.userId);
+    if (!user || user.role !== "admin") {
       return res.status(403).json({
         success: false,
         message: "Admin access only",
       });
     }
-
     next();
   } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: "Server error",
-    });
+    return res.status(500).json({ success: false, message: "Server error" });
   }
 };

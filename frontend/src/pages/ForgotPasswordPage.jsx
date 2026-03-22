@@ -13,8 +13,10 @@ const ForgotPasswordPage = () => {
 
 	const handleSubmit = async (e) => {
 		e.preventDefault();
-		await forgotPassword(email);
-		setIsSubmitted(true);
+		const success = await forgotPassword(email);
+		if (success) {
+			setIsSubmitted(true);
+		}
 	};
 
 	return (

@@ -23,11 +23,9 @@ const SignUpPage = () => {
       return;
     }
 
-    try {
-      await signUp(username, email, password);
+    const success = await signUp(username, email, password);
+    if (success) {
       navigate("/verify-email");
-    } catch (error) {
-      toast.error(error.message || "Error During SignUp");
     }
   };
 
@@ -36,11 +34,10 @@ const SignUpPage = () => {
 
     onSuccess: async (codeResponse) => {
       await googleLogin(codeResponse.code);
-      toast.success("Google signup successful");
     },
 
     onError: () => {
-      console.log("Google signup failed");
+      toast.error("Google signup failed");
     },
   });
 

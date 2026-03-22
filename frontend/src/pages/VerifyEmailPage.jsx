@@ -1,7 +1,6 @@
 import { useContext, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import toast from "react-hot-toast";
 import UserContext from "../context/UserContext";
 
 const EmailVerificationPage = () => {
@@ -46,12 +45,9 @@ const EmailVerificationPage = () => {
 	const handleSubmit = async (e) => {
 		e.preventDefault();
 		const verificationCode = code.join("");
-		try {
-			await verifyEmail(verificationCode);
+		const success = await verifyEmail(verificationCode);
+		if (success) {
 			navigate("/");
-			toast.success("Email verified successfully");
-		} catch (error) {
-			toast.error(error.message || "Error sending EmailVerfication");
 		}
 	};
 
