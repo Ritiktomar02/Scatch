@@ -10,7 +10,7 @@ import {
   sendVerificationEmail,
   sendWelcomeEmail,
   sendResetSuccessEmail,
-} from "../mailtrap/emails.js";
+} from "../emails/emails.js";
 
 import { oauth2Client } from "../config/google-connection.js";
 import axios from "axios";
@@ -22,7 +22,7 @@ export const register = async (req, res) => {
     if (!username || !email || !password) {
       return res.status(400).json({ message: "Some fields are missing" });
     }
-    
+
     const userAlreadyExists = await User.findOne({ email });
     if (userAlreadyExists) {
       return res.status(400).json({ message: "User already exists" });
@@ -411,3 +411,5 @@ export const refresh = async (req, res) => {
     return res.status(401).json({ message: "Invalid refresh token" });
   }
 };
+
+

@@ -4,7 +4,7 @@ import cookieParser from "cookie-parser";
 import cors from "cors";
 import connectDB from "./config/db-connection.js";
 import cloudinaryConnect from "./config/cloudinary-connection.js";
-import userRoute from "./routes/userRoute.js"
+import userRoute from "./routes/user-route.js"
 
 dotenv.config();
 

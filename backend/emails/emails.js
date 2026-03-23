@@ -1,10 +1,10 @@
-import { transporter } from "./gmail.config.js";
+import { transporter } from "../config/gmail-connection.js";
 import {
 	PASSWORD_RESET_REQUEST_TEMPLATE,
 	PASSWORD_RESET_SUCCESS_TEMPLATE,
 	VERIFICATION_EMAIL_TEMPLATE,
     WELCOME_EMAIL_TEMPLATE
-} from "./emailTemplates.js";
+} from "./email-templates.js";
 
 export const sendVerificationEmail = async (email, verificationToken) => {
   try {
@@ -99,7 +99,3 @@ export const sendResetSuccessEmail = async (email) => {
     throw new Error(error.message);
   }
 };
-
-
-
-
